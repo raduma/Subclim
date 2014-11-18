@@ -760,7 +760,10 @@ class JavaImportClassUnderCursor(sublime_plugin.TextCommand):
             if isinstance(import_result, list):
                 class_names.extend(import_result)
             elif isinstance(import_result, dict):
-                message.append(import_result['message'])
+                if import_result['message']:
+                    message.append(import_result['message'])
+                else:
+                    mesage = ''
             elif isinstance(import_result, str):
                 message.append(import_result)
             sublime.set_timeout(on_find_imports_finished, 0)
@@ -772,7 +775,9 @@ class JavaImportClassUnderCursor(sublime_plugin.TextCommand):
             elif len(class_names) > 1:
                 self.possible_imports = class_names
                 self.show_import_menu()
-
+            elif not message:
+                sublime.message_dialog("Import likely succeeded with a single option.")
+                pass
         tasks.put(async_find_imports_task)
 
     def call_eclim(self, project, _file, offset):
