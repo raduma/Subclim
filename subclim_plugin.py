@@ -493,10 +493,20 @@ class CompletionProposal(object):
             self.insert = insert
         else:
             self.insert = name
+        if ')' in self.name: # tokenize method params
+            self.insert = self.name.split(')', 1)[0] + ')'
+            op = self.insert.index('(') + 1
+            cp = self.insert.index(')')
+            args = self.insert[op:cp].split(',')
+            toks = []
+            for a in args:
+                toks.append("${%d:%s}" % (len(toks) + 1, a.strip()))
+            args = ", ".join(toks)
+            self.insert = self.insert[:op] + args + self.insert[cp:]
         self.type = "None"
 
     def __repr__(self):
-        return "CompletionProposal: %s %s" % (self.name, self.insert)
+        return "CompletionProposal: [%s] [%s]" % (self.name, self.insert)
 
 
 class ManualCompletionRequest(sublime_plugin.TextCommand):
@@ -535,6 +545,7 @@ class JavaCompletions(sublime_plugin.EventListener):
         pos = offset_of_location(view, locations[0])
 
         proposals = self.to_proposals(c_func(project, fn, pos))
+        proposals.sort(key=lambda x: x.display)
         return [(p.display, p.insert) for p in proposals]
 
     def queue_completions(self, view):
