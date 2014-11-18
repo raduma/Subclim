@@ -201,14 +201,23 @@ def check_eclim(view=None):
 
 def get_context(view):
     s = view.settings()
-    project = s.get('subclim.project', None)
-    relative_path = s.get('subclim.project_relative_path', None)
-    if project is None:
-        project, relative_path = eclim.get_context(view.file_name())
-        if project is not None:
-            s.set('subclim.project', project)
+    project = s.get('subclim.view.project', None)
+    relative_path = s.get('subclim.view.project_relative_path', None)
+    if project is None or relative_path is None:
+        p, relative_path = eclim.get_context(view.file_name())
+
+        if project is None:
+            project = s.get('subclim_eclipse_project_name', None) or p
+
+        if relative_path is None:
+            root_path = s.get('subclim_eclipse_root_path', None)
+            if root_path:
+                relative_path = os.path.relpath(view.file_name(), root_path)
+
+        if project is not None:   
+            s.set('subclim.view.project', project)
         if relative_path is not None:
-            s.set('subclim.project_relative_path', relative_path)
+            s.set('subclim.view.project_relative_path', relative_path)
     return project, relative_path
 
 
