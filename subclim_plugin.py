@@ -694,9 +694,16 @@ class JavaValidation(sublime_plugin.EventListener):
         tasks.put(async_validate_task)
 
     def visualize(self, view):
+        views = []
+        if view.window():
+            views = [v for v in view.window().views() if v.buffer_id() is view.buffer_id()];
+        for v in views or [view]:
+            self._view_visualize(v, view)
+
+    def _view_visualize(self, view, first_view):
         view.erase_regions('subclim-errors')
         view.erase_regions('subclim-warnings')
-        lines = JavaValidation.line_messages[view.id()]
+        lines = JavaValidation.line_messages[first_view.id()]
 
         outlines = [view.line(view.text_point(lineno - 1, 0))
                     for lineno in lines.keys()
@@ -711,16 +718,23 @@ class JavaValidation(sublime_plugin.EventListener):
             'subclim-warnings', outlines, 'comment', 'dot', JavaValidation.drawType)
 
     def on_selection_modified(self, view):
+        views = [v for v in view.window().views() if v.buffer_id() is view.buffer_id()] if view.window() else None
+        for v in views or [view]:
+            if self._view_on_selection_modified(v, view):
+                return
+        view.erase_status('subclim')
+
+    def _view_on_selection_modified(self, view, first_view):
         validation_func = self.validation_func(view)
         if validation_func:
             line_messages = JavaValidation.line_messages
-            vid = view.id()
+            vid = first_view.id()
             lineno = view.rowcol(view.sel()[0].end())[0] + 1
             if vid in line_messages and lineno in line_messages[vid]:
                 view.set_status(
                     'subclim', '; '.join([e['message'] for e in line_messages[vid][lineno]]))
-            else:
-                view.erase_status('subclim')
+                return True
+        return False
 
 
 class JavaImportClassUnderCursor(sublime_plugin.TextCommand):
@@ -735,7 +749,8 @@ class JavaImportClassUnderCursor(sublime_plugin.TextCommand):
         pos = self.view.sel()[0]
         word = self.view.word(pos)
         offset = offset_of_location(self.view, word.a)
-        self.view.run_command("save")
+        if self.view.is_dirty():
+            self.view.run_command("save")
 
         class_names = []
         message = []
