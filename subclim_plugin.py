@@ -709,13 +709,13 @@ class JavaValidation(sublime_plugin.EventListener):
                     for lineno in lines.keys()
                     if len(list(filter(lambda x: x['error'], lines[lineno]))) > 0]
         view.add_regions(
-            'subclim-errors', outlines, 'keyword', 'dot', JavaValidation.drawType)
+            'subclim-errors', outlines, 'invalid', 'dot')
 
         outlines = [view.line(view.text_point(lineno - 1, 0))
                     for lineno in lines.keys()
                     if len(list(filter(lambda x: x['error'], lines[lineno]))) <= 0]
         view.add_regions(
-            'subclim-warnings', outlines, 'comment', 'dot', JavaValidation.drawType)
+            'subclim-warnings', outlines, 'comment', 'bookmark')
 
     def on_selection_modified(self, view):
         views = [v for v in view.window().views() if v.buffer_id() is view.buffer_id()] if view.window() else None
