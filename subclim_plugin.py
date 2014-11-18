@@ -630,12 +630,17 @@ class JavaValidation(sublime_plugin.EventListener):
 
     def validation_func(self, view):
         syntax = view.settings().get("syntax")
+        if not syntax:
+            return None
         if "Java.tmLanguage" in syntax:
             return eclim.update_java_src
         elif "Scala.tmLanguage" in syntax:
             return eclim.update_scala_src
         else:
             return None
+
+    def on_activated(self, view):
+        self.on_post_save(view)
 
     def on_load(self, view):
         validation_func = self.validation_func(view)
